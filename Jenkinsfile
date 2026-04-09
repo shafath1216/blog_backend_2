@@ -4,23 +4,23 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                // This pulls your latest code from GitHub
-                checkout scm
+                // This forces Jenkins to go to your folder
+                dir('/home/ubuntu') {
+                    echo 'Pulling code into /home/ubuntu/blog_backend_2...'
+                    checkout scm
+                }
             }
         }
 
         stage('Build & Deploy') {
             steps {
-                echo 'Deploying containers...'
-                // This runs your existing docker-compose setup
-                sh 'docker compose up -d --build'
-            }
-        }
-
-        stage('Verify') {
-            steps {
-                echo 'Checking running containers...'
-                sh 'docker ps'
+                dir('/home/ubuntu') {
+                    echo 'Running Docker Compose from /home/ubuntu...'
+                    /* We run it here so it finds the docker-compose.yml 
+                       and the .env files sitting in your home folder.
+                    */
+                    sh 'docker-compose up --build -d backend'
+                }
             }
         }
     }
