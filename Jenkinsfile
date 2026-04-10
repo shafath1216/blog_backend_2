@@ -1,33 +1,24 @@
 pipeline {
     agent any
 
-    options {
-        // This ensures every stage runs inside your specific project folder
-        customWorkspace '/opt/blog-project/blog-backend'
-        // Keeps your build history clean by only keeping the last 5 builds
-        buildDiscarder(logRotator(numToKeepStr: '5'))
-    }
-
     stages {
-        stage('Checkout') {
+        stage('Checkout & Build') {
             steps {
-                // Wipe the workspace before pulling fresh code
-                cleanWs()
-                checkout scm
-            }
-        }
-
-        stage('Build & Deploy') {
-            steps {
-                script {
-                    // We step out to the root directory (/opt/blog-project) 
-                    // to find the docker-compose.yml and .env file
-                    dir('..') {
-                        echo "Starting Docker Build for Backend..."
-                        sh 'docker-compose up -d --build backend'
-                        
-                        echo "Cleaning up old images..."
-                        sh 'docker image prune -f'
+                // This 'ws' block forces EVERYTHING inside it to happen in your folder
+                ws('/opt/blog-project/blog-backend') {
+                    
+                    // 1. Pull the code
+                    checkout scm
+                    
+                    script {
+                        // 2. Step up to the root to run Docker
+                        dir('..') {
+                            echo "Found docker-compose.yml, starting build..."
+                            sh 'docker-compose up -d --build backend'
+                            
+                            echo "Cleaning up..."
+                            sh 'docker image prune -f'
+                        }
                     }
                 }
             }
@@ -36,10 +27,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ Deployment Successful! Backend is updated and running.'
+            echo '✅ Success!'
         }
         failure {
-            echo '❌ Deployment Failed. Check the console logs for permission or syntax errors.'
+            echo '❌ Failed. Check the logs.'
         }
     }
 }
