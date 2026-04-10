@@ -17,7 +17,7 @@ pipeline {
                         
                         // Run docker commands by referencing the parent directory
                         // This avoids moving the Jenkins 'focus' to the root
-                        sh 'cd /opt/blog-project && docker compose up -d --build backend'
+                        sh 'cd .. && docker-compose up -d --build backend'
                         sh 'docker image prune -f'
                     }
                 }
