@@ -17,7 +17,7 @@ pipeline {
                         
                         // Run docker commands by referencing the parent directory
                         // This avoids moving the Jenkins 'focus' to the root
-                        sh 'docker compose -f ../docker-compose.yml up -d --build backend'
+                        sh 'docker compose --file ../docker-compose.yml up -d --build backend'
                         sh 'docker image prune -f'
                     }
                 }
