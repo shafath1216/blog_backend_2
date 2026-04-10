@@ -1,15 +1,17 @@
 pipeline {
-    agent {
-        node {
-            // Forces Jenkins to use your specific project directory
-            customWorkspace '/opt/blog-project/blog-backend'
-        }
+    agent any
+
+    options {
+        // This ensures every stage runs inside your specific project folder
+        customWorkspace '/opt/blog-project/blog-backend'
+        // Keeps your build history clean by only keeping the last 5 builds
+        buildDiscarder(logRotator(numToKeepStr: '5'))
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Wipe the dummy folders we created earlier to make room for real code
+                // Wipe the workspace before pulling fresh code
                 cleanWs()
                 checkout scm
             }
@@ -18,26 +20,26 @@ pipeline {
         stage('Build & Deploy') {
             steps {
                 script {
-                    // Step out to the root to run the orchestrator
+                    // We step out to the root directory (/opt/blog-project) 
+                    // to find the docker-compose.yml and .env file
                     dir('..') {
-                        // We use sudo if your jenkins user isn't in the docker group yet, 
-                        // but since we did 'usermod', raw command should work.
+                        echo "Starting Docker Build for Backend..."
                         sh 'docker-compose up -d --build backend'
                         
-                        // Keeps your EC2 from running out of space
+                        echo "Cleaning up old images..."
                         sh 'docker image prune -f'
                     }
                 }
             }
         }
     }
-    
+
     post {
         success {
-            echo 'Backend is live! Check docker ps on the server.'
+            echo '✅ Deployment Successful! Backend is updated and running.'
         }
         failure {
-            echo 'Build failed. Check the console output for permission or path errors.'
+            echo '❌ Deployment Failed. Check the console logs for permission or syntax errors.'
         }
     }
 }
