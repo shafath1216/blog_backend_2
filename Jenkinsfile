@@ -1,36 +1,31 @@
 pipeline {
     agent any
+    
+    options {
+        skipDefaultCheckout() // Prevents Jenkins from touching its default /var/lib/ workspace
+    }
 
     stages {
-        stage('Checkout & Build') {
+        stage('Deploy') {
             steps {
-                // This 'ws' block forces EVERYTHING inside it to happen in your folder
+                // LOCK everything inside the subfolder
                 ws('/opt/blog-project/blog-backend') {
                     
-                    // 1. Pull the code
+                    // ONLY cleans /opt/blog-project/blog-backend/*
+                    // Your .env and docker-compose.yml in /opt/blog-project/ are SAFE
+                    cleanWs() 
+                    
                     checkout scm
                     
                     script {
-                        // 2. Step up to the root to run Docker
+                        // We only "visit" the root to run the command, then we leave
                         dir('..') {
-                            echo "Found docker-compose.yml, starting build..."
                             sh 'docker-compose up -d --build backend'
-                            
-                            echo "Cleaning up..."
                             sh 'docker image prune -f'
                         }
                     }
                 }
             }
-        }
-    }
-
-    post {
-        success {
-            echo '✅ Success!'
-        }
-        failure {
-            echo '❌ Failed. Check the logs.'
         }
     }
 }
